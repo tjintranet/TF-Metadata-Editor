@@ -32,6 +32,9 @@
             color: #212529;
             margin-bottom: 0.5rem;
         }
+        .empty-field {
+            background-color: #ffebee;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -76,9 +79,9 @@
             { path: '//product/title', label: 'Title' },
             { path: '//product/isbn', label: 'ISBN' },
             { path: '//product/version_type', label: 'Binding' },
-            { path: '//product/page_extent', label: 'Page Extent' },
             { path: '//product/format/width', label: 'Width' },
             { path: '//product/format/height', label: 'Height' },
+            { path: '//product/page_extent', label: 'Page Extent' },
             { path: '//product/parts/text/spine', label: 'Spine Size' },
             { path: '//product/parts/text/colour', label: 'Text Colour' },
             { path: '//product/parts/text/grammage', label: 'Text Paper GSM' },
@@ -125,16 +128,18 @@
                 if (element) {
                     elementPaths.set(field.path, element);
                     
+                    const content = element.textContent.trim();
+                    const isEmpty = content === '';
                     resultHTML += `
                         <div class="col-md-6 mb-3">
                             <label class="field-label">${field.label}</label>
                             <div
-                                class="editable-field"
+                                class="editable-field ${isEmpty ? 'empty-field' : ''}"
                                 contenteditable="true"
                                 data-xpath="${field.path}"
                                 role="textbox"
                                 aria-label="${field.label}"
-                            >${element.textContent}</div>
+                            >${content}</div>
                         </div>
                     `;
                 }
@@ -149,6 +154,12 @@
                     const element = elementPaths.get(xpath);
                     if (element) {
                         element.textContent = this.textContent;
+                        // Update empty state
+                        if (this.textContent.trim() === '') {
+                            this.classList.add('empty-field');
+                        } else {
+                            this.classList.remove('empty-field');
+                        }
                     }
                 });
             });
