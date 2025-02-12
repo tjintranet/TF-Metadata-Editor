@@ -35,6 +35,26 @@
         .empty-field {
             background-color: #ffebee;
         }
+        .character-warning {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .title-exceeded {
+            border-color: #dc3545;
+            background-color: #fff8f8;
+        }
+        .title-exceeded:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
+        .dropdown-field {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            width: 100%;
+            background-color: #fff;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -127,34 +147,93 @@
                 const element = getElementByXPath(field.path, xmlDoc);
                 if (element) {
                     elementPaths.set(field.path, element);
-                    
                     const content = element.textContent.trim();
                     const isEmpty = content === '';
-                    resultHTML += `
-                        <div class="col-md-6 mb-3">
-                            <label class="field-label">${field.label}</label>
-                            <div
-                                class="editable-field ${isEmpty ? 'empty-field' : ''}"
-                                contenteditable="true"
-                                data-xpath="${field.path}"
-                                role="textbox"
-                                aria-label="${field.label}"
-                            >${content}</div>
-                        </div>
-                    `;
+                    
+                    resultHTML += `<div class="col-md-6 mb-3">
+                        <label class="field-label">${field.label}</label>`;
+
+                    // Special handling for Text Paper GSM dropdown
+                    if (field.path === '//product/parts/text/grammage') {
+                        resultHTML += `
+                            <select class="dropdown-field" data-xpath="${field.path}">
+                                <option value="" ${content === '' ? 'selected' : ''}>Select GSM</option>
+                                <option value="80gsm/50lb" ${content === '80gsm/50lb' ? 'selected' : ''}>80gsm/50lb</option>
+                                <option value="90gsm/60lb" ${content === '90gsm/60lb' ? 'selected' : ''}>90gsm/60lb</option>
+                            </select>`;
+                    }
+                    // Special handling for Text Colour dropdown
+                    else if (field.path === '//product/parts/text/colour') {
+                        resultHTML += `
+                            <select class="dropdown-field" data-xpath="${field.path}">
+                                <option value="" ${content === '' ? 'selected' : ''}>Select Colour</option>
+                                <option value="1" ${content === '1' ? 'selected' : ''}>1</option>
+                                <option value="4" ${content === '4' ? 'selected' : ''}>4</option>
+                                <option value="Scattercolour" ${content === 'Scattercolour' ? 'selected' : ''}>Scattercolour</option>
+                            </select>`;
+                    }
+                    // Title field with character counter
+                    else if (field.path === '//product/title') {
+                        resultHTML += `
+                            <div class="editable-field ${isEmpty ? 'empty-field' : ''}" 
+                                 contenteditable="true" 
+                                 data-xpath="${field.path}"
+                                 role="textbox"
+                                 aria-label="${field.label}">${content}</div>
+                            <div class="character-warning" id="titleCharCount" style="display: none;">
+                                Character limit exceeded (max 58 characters)
+                            </div>`;
+                    }
+                    // Default editable field
+                    else {
+                        resultHTML += `
+                            <div class="editable-field ${isEmpty ? 'empty-field' : ''}"
+                                 contenteditable="true"
+                                 data-xpath="${field.path}"
+                                 role="textbox"
+                                 aria-label="${field.label}">${content}</div>`;
+                    }
+                    
+                    resultHTML += '</div>';
                 }
             });
             
             resultHTML += '</div>';
             document.getElementById('result').innerHTML = resultHTML;
 
+            // Add event listeners for dropdowns
+            document.querySelectorAll('select.dropdown-field').forEach(select => {
+                select.addEventListener('change', function() {
+                    const xpath = this.getAttribute('data-xpath');
+                    const element = elementPaths.get(xpath);
+                    if (element) {
+                        element.textContent = this.value;
+                    }
+                });
+            });
+
+            // Add event listeners for editable fields
             document.querySelectorAll('.editable-field').forEach(field => {
                 field.addEventListener('input', function() {
                     const xpath = this.getAttribute('data-xpath');
                     const element = elementPaths.get(xpath);
+                    
+                    // Title field character limit validation
+                    if (xpath === '//product/title') {
+                        const charCount = this.textContent.length;
+                        const warningElement = document.getElementById('titleCharCount');
+                        
+                        if (charCount > 58) {
+                            this.classList.add('title-exceeded');
+                            warningElement.style.display = 'block';
+                        } else {
+                            this.classList.remove('title-exceeded');
+                            warningElement.style.display = 'none';
+                        }
+                    }
+
                     if (element) {
                         element.textContent = this.textContent;
-                        // Update empty state
                         if (this.textContent.trim() === '') {
                             this.classList.add('empty-field');
                         } else {
