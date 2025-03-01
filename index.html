@@ -11,7 +11,7 @@
     
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     
     <style>
         .editable-field {
@@ -65,11 +65,11 @@
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">T&F Metadata Editor</h4>
                         <div>
-                            <button class="btn btn-outline-light me-2" onclick="clearAll()">
-                                <i class="fas fa-times"></i> Clear All
+                            <button class="btn btn-outline-light me-2" id="clearBtn" onclick="clearAll()">
+                                <i class="bi bi-trash3"></i> Clear Results
                             </button>
                             <button class="btn btn-outline-light" onclick="downloadXML()" id="downloadBtn" style="display: none;">
-                                <i class="fas fa-download"></i> Download XML
+                                <i class="bi bi-download"></i> &nbsp; Download XML
                             </button>
                         </div>
                     </div>
