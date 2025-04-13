@@ -21,6 +21,7 @@
             transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
             min-height: 38px;
             background-color: #fff;
+            overflow: auto; /* Allow scrolling for content that exceeds field size */
         }
         .editable-field:focus {
             outline: 0;
@@ -36,9 +37,13 @@
             background-color: #ffebee;
         }
         .character-warning {
-            color: #dc3545;
+            color: #6c757d;
             font-size: 0.875rem;
             margin-top: 0.25rem;
+        }
+        .character-exceeded {
+            color: #dc3545;
+            font-weight: bold;
         }
         .title-exceeded {
             border-color: #dc3545;
@@ -188,16 +193,15 @@
                     }
                     // Title field with character counter
                     else if (field.path === '//product/title') {
-                        const charCount = content.length;
-                        const exceedsLimit = charCount > 58;
+                        const content = element.textContent.trim();
                         resultHTML += `
-                            <div class="editable-field ${isEmpty ? 'empty-field' : ''} ${exceedsLimit ? 'title-exceeded' : ''}" 
+                            <div class="editable-field ${isEmpty ? 'empty-field' : ''}" 
                                  contenteditable="true" 
                                  data-xpath="${field.path}"
                                  role="textbox"
                                  aria-label="${field.label}">${content}</div>
-                            <div class="character-warning" id="titleCharCount" style="${exceedsLimit ? 'display: block;' : 'display: none;'}">
-                                Character limit exceeded (max 58 characters): ${charCount}/58
+                            <div class="character-warning" id="titleCharCount">
+                                <span id="titleCharCounter">${content.length}/58 characters</span>
                             </div>`;
                     }
                     // Default editable field
@@ -230,35 +234,58 @@
 
             // Add event listeners for editable fields
             document.querySelectorAll('.editable-field').forEach(field => {
+                // Initial validation check for title field
+                if (field.getAttribute('data-xpath') === '//product/title') {
+                    checkTitleLength(field);
+                }
+                
                 field.addEventListener('input', function() {
                     const xpath = this.getAttribute('data-xpath');
                     const element = elementPaths.get(xpath);
                     
                     // Title field character limit validation
                     if (xpath === '//product/title') {
-                        const charCount = this.textContent.length;
-                        const warningElement = document.getElementById('titleCharCount');
-                        
-                        if (charCount > 58) {
-                            this.classList.add('title-exceeded');
-                            warningElement.style.display = 'block';
-                            warningElement.textContent = `Character limit exceeded (max 58 characters): ${charCount}/58`;
-                        } else {
-                            this.classList.remove('title-exceeded');
-                            warningElement.style.display = 'none';
-                        }
+                        checkTitleLength(this);
                     }
 
                     if (element) {
-                        element.textContent = this.textContent;
-                        if (this.textContent.trim() === '') {
+                        element.textContent = this.innerText || this.textContent;
+                        if ((this.innerText || this.textContent).trim() === '') {
                             this.classList.add('empty-field');
                         } else {
                             this.classList.remove('empty-field');
                         }
                     }
                 });
+
+                // Handle paste events to strip formatting
+                field.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
             });
+            
+            // Function to check title length - works across browsers
+            function checkTitleLength(element) {
+                // Use innerText for visible content in Chrome, fallback to textContent
+                const content = element.innerText || element.textContent;
+                const charCount = content.length;
+                const warningElement = document.getElementById('titleCharCount');
+                const counterElement = document.getElementById('titleCharCounter');
+                
+                if (counterElement) {
+                    counterElement.textContent = `${charCount}/58 characters`;
+                    
+                    if (charCount > 58) {
+                        element.classList.add('title-exceeded');
+                        counterElement.classList.add('character-exceeded');
+                    } else {
+                        element.classList.remove('title-exceeded');
+                        counterElement.classList.remove('character-exceeded');
+                    }
+                }
+            }
         }
 
         function clearAll() {
