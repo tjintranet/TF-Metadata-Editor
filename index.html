@@ -172,16 +172,32 @@
                                 <option value="Scattercolor" ${content === 'Scattercolor' ? 'selected' : ''}>Scattercolor</option>
                             </select>`;
                     }
+                    // New handling for Lamination dropdown
+                    else if (field.path === '//product/parts/covers/treatment') {
+                        // If empty, make Gloss laminate the default
+                        const defaultValue = isEmpty ? 'Gloss laminate' : content;
+                        // If empty and we're setting a default, update the XML element
+                        if (isEmpty && element) {
+                            element.textContent = 'Gloss laminate';
+                        }
+                        resultHTML += `
+                            <select class="dropdown-field" data-xpath="${field.path}">
+                                <option value="Gloss laminate" ${defaultValue === 'Gloss laminate' ? 'selected' : ''}>Gloss laminate</option>
+                                <option value="Matt laminate" ${defaultValue === 'Matt laminate' ? 'selected' : ''}>Matt laminate</option>
+                            </select>`;
+                    }
                     // Title field with character counter
                     else if (field.path === '//product/title') {
+                        const charCount = content.length;
+                        const exceedsLimit = charCount > 58;
                         resultHTML += `
-                            <div class="editable-field ${isEmpty ? 'empty-field' : ''}" 
+                            <div class="editable-field ${isEmpty ? 'empty-field' : ''} ${exceedsLimit ? 'title-exceeded' : ''}" 
                                  contenteditable="true" 
                                  data-xpath="${field.path}"
                                  role="textbox"
                                  aria-label="${field.label}">${content}</div>
-                            <div class="character-warning" id="titleCharCount" style="display: none;">
-                                Character limit exceeded (max 58 characters)
+                            <div class="character-warning" id="titleCharCount" style="${exceedsLimit ? 'display: block;' : 'display: none;'}">
+                                Character limit exceeded (max 58 characters): ${charCount}/58
                             </div>`;
                     }
                     // Default editable field
@@ -226,6 +242,7 @@
                         if (charCount > 58) {
                             this.classList.add('title-exceeded');
                             warningElement.style.display = 'block';
+                            warningElement.textContent = `Character limit exceeded (max 58 characters): ${charCount}/58`;
                         } else {
                             this.classList.remove('title-exceeded');
                             warningElement.style.display = 'none';
